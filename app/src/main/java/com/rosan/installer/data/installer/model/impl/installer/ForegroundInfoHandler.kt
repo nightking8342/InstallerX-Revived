@@ -443,22 +443,16 @@ class ForegroundInfoHandler(scope: CoroutineScope, installer: InstallerRepo) :
         ).build()
         actionsBundle.putParcelable("miui.focus.action_finish", finishAction)
         
-        val launchIntent = context.packageManager.getLaunchIntentForPackage(entities.first().packageName)
-        val launchPendingIntent = launchIntent?.let {
-            BroadcastHandler.launchIntent(context, installer, it)
-        }
-        if (launchPendingIntent != null) {
-            // 将PendingIntent包装在Notification.Action对象中
-            val openAction = Notification.Action.Builder(
+        // 直接复用privilegedLaunchAndFinishIntent，它会在启动应用后自动关闭通知
+        val openPendingIntent = BroadcastHandler.privilegedLaunchAndFinishIntent(context, installer)
+        // 将PendingIntent包装在Notification.Action对象中
+        val openAction = Notification.Action.Builder(
             R.drawable.ic_notification_logo, // 使用应用图标作为备选
             getString(R.string.open),
-            launchPendingIntent
+            openPendingIntent
         ).build()
-            actionsBundle.putParcelable("miui.focus.action_open", openAction)
-            Timber.d("[id=${installer.id}] buildIslandNotificationForSuccess: Added launch action for ${entities.first().packageName}")
-        } else {
-            Timber.d("[id=${installer.id}] buildIslandNotificationForSuccess: No launch intent found for ${entities.first().packageName}")
-        }
+        actionsBundle.putParcelable("miui.focus.action_open", openAction)
+        Timber.d("[id=${installer.id}] buildIslandNotificationForSuccess: Added privileged launch and finish action for ${entities.first().packageName}")
         
         extras.putBundle("miui.focus.actions", actionsBundle)
         
